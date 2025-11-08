@@ -1,0 +1,20 @@
+[Unit]
+Description=Grid XMR Mining
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/xmrig \
+  --url=tokyo:3333 \
+  --user=%H \
+  --pass=%H \
+  --algo=rx/0 \
+  --cpu-priority=5 \
+
+  --verbose=0
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
