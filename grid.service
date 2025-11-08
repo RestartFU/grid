@@ -9,7 +9,7 @@ ExecStart=/usr/bin/xmrig \
   --url=tokyo:3333 \
   --user=%H \
   --pass=%H \
-  --algo=rx/0 \
+  --algo=rx/monero \
   --cpu-priority=5 \
 
   --verbose=0
