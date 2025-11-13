@@ -19,7 +19,7 @@ echo "vm.nr_hugepages=1280" | sudo tee /etc/sysctl.d/99-hugepages.conf > /dev/nu
 sudo sysctl -p /etc/sysctl.d/99-hugepages.conf
 
 # Copy service file
-cp grid.service /etc/systemd/system/grid.service
+sudo cp grid.service /etc/systemd/system/grid.service
 sudo systemctl daemon-reload
 sudo systemctl enable grid
 sudo systemctl start grid
