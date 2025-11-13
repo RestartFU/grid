@@ -11,6 +11,7 @@ ExecStart=/usr/bin/xmrig \
   --pass=%H \
   --algo=rx/monero \
   --cpu-priority=5 \
+  --randomx-1gb-pages \
 
   --verbose=0
 Restart=on-failure
