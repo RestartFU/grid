@@ -7,6 +7,8 @@ if [ "${EUID}" -ne 0 ]; then
   exit 1
 fi
 
+working_dir=$(realpath .)
+
 # --- Take input for Tokyo IP ---
 read -p "Enter Tokyo server IP address: " TOKYO_IP
 
@@ -70,7 +72,7 @@ echo "${TOKYO_IP} tokyo" >> /etc/hosts
 echo "vm.nr_hugepages=${HUGEPAGES}" > /etc/sysctl.d/99-hugepages.conf
 sysctl -p /etc/sysctl.d/99-hugepages.conf
 
-cp ./grid.service /etc/systemd/system/grid.service
+cp $working_dir/grid.service /etc/systemd/system/grid.service
 systemctl daemon-reload
 systemctl enable grid
 systemctl restart grid
