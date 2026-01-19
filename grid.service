@@ -1,10 +1,16 @@
 [Unit]
 Description=Grid XMR Mining
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
+
+# Optional but recommended for mining stability/perf
+LimitNOFILE=1048576
+Nice=-5
+
 ExecStart=/usr/bin/xmrig \
   --url=tokyo:3333 \
   --user=%H \
@@ -12,10 +18,12 @@ ExecStart=/usr/bin/xmrig \
   --algo=rx/monero \
   --cpu-priority=5 \
   --randomx-1gb-pages \
-
+  --huge-pages \
   --verbose=0
+
 Restart=on-failure
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
+
