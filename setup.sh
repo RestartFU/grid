@@ -7,10 +7,6 @@ if [ "${EUID}" -ne 0 ]; then
   exit 1
 fi
 
-# --- Override shutdown with reboot (your original behavior) ---
-mv /usr/bin/shutdown /usr/bin/shutdown-force 2>/dev/null || true
-cp /usr/bin/reboot /usr/bin/shutdown
-
 # --- Take input for Tokyo IP ---
 read -p "Enter Tokyo server IP address: " TOKYO_IP
 
