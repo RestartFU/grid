@@ -82,7 +82,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
-				WithTitle("Hashrate (10s)").
+				WithTitle(m.username).
 				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
 				WithFields(uptimeField).
 				WithColor(5763719)).
