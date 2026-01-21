@@ -13,8 +13,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/restartfu/grid/internal/cpu"
 	"github.com/restartfu/grid/internal/webhook"
 	"github.com/restartfu/grid/internal/xmrig"
+	"github.com/samber/lo"
 )
 
 func main() {
@@ -22,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	startedAt := time.Now().UTC()
-	mgr, err := webhook.NewManager(*webhookURL, "Hashrate", startedAt)
+	mgr, err := webhook.NewManager(*webhookURL, lo.Must(cpu.Model()), startedAt)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "webhook init error: %v\n", err)
 		os.Exit(1)
@@ -61,11 +63,11 @@ func main() {
 	}()
 
 	state := new(float64)
-	go streamLogs(stdout, os.Stdout, os.Stdout, state)
+	go streamLogs(stdout, os.Stdout, state)
 	mgr.Start(ctx, state)
 }
 
-func streamLogs(r io.Reader, out io.Writer, hashrateOut io.Writer, hashrate *float64) {
+func streamLogs(r io.Reader, out io.Writer, hashrate *float64) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
