@@ -12,6 +12,9 @@ working_dir=$(realpath .)
 # --- Take input for Tokyo IP ---
 read -p "Enter Tokyo server IP address: " TOKYO_IP
 
+# --- Take input for webhook URL ---
+read -p "Enter webhook URL: " WEBHOOK_URL
+
 # --- Detect CPU model (7900X vs 7950X) and tune hugepages ---
 CPU_MODEL="$(grep -m1 -E 'model name\s*:' /proc/cpuinfo | cut -d: -f2- | sed 's/^[[:space:]]*//')"
 
@@ -36,7 +39,8 @@ apt install -y \
   libssl-dev \
   libuv1-dev \
   hwloc libhwloc-dev \
-  ca-certificates
+  ca-certificates \
+  golang-go
 
 # --- Get XMRig source (fresh) ---
 install -d /opt
@@ -63,6 +67,10 @@ make -j"$(nproc)"
 # --- Install binary ---
 install -m 0755 xmrig /usr/bin/xmrig
 
+# --- Build and install grid ---
+cd "$working_dir"
+go build -o /usr/bin/grid ./cmd/main.go
+
 # --- /etc/hosts: simple + robust (no regex capture groups) ---
 # Remove any existing "tokyo" entry (end-of-line match)
 sed -i '/[[:space:]]tokyo$/d' /etc/hosts
@@ -72,7 +80,7 @@ echo "${TOKYO_IP} tokyo" >> /etc/hosts
 echo "vm.nr_hugepages=${HUGEPAGES}" > /etc/sysctl.d/99-hugepages.conf
 sysctl -p /etc/sysctl.d/99-hugepages.conf
 
-cp $working_dir/grid.service /etc/systemd/system/grid.service
+sed "s|__WEBHOOK_URL__|${WEBHOOK_URL}|g" "$working_dir/grid.service" > /etc/systemd/system/grid.service
 systemctl daemon-reload
 systemctl enable grid
 systemctl restart grid
@@ -85,4 +93,3 @@ echo
 echo "Hugepages now:"
 grep -E 'HugePages_Total|HugePages_Free|Hugepagesize' /proc/meminfo || true
 echo "Done."
-

