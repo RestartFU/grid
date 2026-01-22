@@ -242,7 +242,7 @@ func (m *Manager) specFields() []rhookie.Field {
 
 func (m *Manager) footerText() string {
 	uptime := formatUptime(time.Since(m.startedAt))
-	updated := time.Now().UTC().Format("2006-01-02 15:04:05 UTC")
+	updated := fmt.Sprintf("<t:%d:R>", time.Now().Unix())
 	return fmt.Sprintf("Uptime: %s | Updated: %s", uptime, updated)
 }
 
