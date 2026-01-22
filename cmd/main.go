@@ -29,6 +29,7 @@ func main() {
 		Model:      cpuSpecs.Model,
 		Cores:      cpuSpecs.Cores,
 		Threads:    cpuSpecs.Threads,
+		Motherboard: cpuSpecs.Motherboard,
 		RAM:        cpuSpecs.RAM,
 		RAMSpeed:   cpuSpecs.RAMSpeed,
 	}, startedAt)

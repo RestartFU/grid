@@ -3,11 +3,12 @@ package specs
 import "runtime"
 
 type Specs struct {
-	Model    string
-	Cores    int
-	Threads  int
-	RAM      string
-	RAMSpeed string
+	Model       string
+	Cores       int
+	Threads     int
+	Motherboard string
+	RAM         string
+	RAMSpeed    string
 }
 
 func Model() (string, error) {
@@ -25,10 +26,11 @@ func ReadSpecs() (Specs, error) {
 	}
 
 	return Specs{
-		Model:    model,
-		Cores:    cores,
-		Threads:  runtime.NumCPU(),
-		RAM:      readRAM(),
-		RAMSpeed: readRAMSpeed(),
+		Model:       model,
+		Cores:       cores,
+		Threads:     runtime.NumCPU(),
+		Motherboard: readMotherboard(),
+		RAM:         readRAM(),
+		RAMSpeed:    readRAMSpeed(),
 	}, nil
 }

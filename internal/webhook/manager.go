@@ -40,11 +40,12 @@ type storedState struct {
 }
 
 type CPUSpecs struct {
-	Model      string
-	Cores      int
-	Threads    int
-	RAM        string
-	RAMSpeed   string
+	Model       string
+	Cores       int
+	Threads     int
+	Motherboard string
+	RAM         string
+	RAMSpeed    string
 }
 
 // NewManager creates a webhook manager backed by a JSON state file.
@@ -226,6 +227,11 @@ func (m *Manager) specFields() []rhookie.Field {
 		fields = append(fields, rhookie.Field{}.
 			WithName("Cores/Threads").
 			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)))
+	}
+	if m.specs.Motherboard != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("Motherboard").
+			WithValue(m.specs.Motherboard))
 	}
 	if m.specs.RAM != "" {
 		fields = append(fields, rhookie.Field{}.
