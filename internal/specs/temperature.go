@@ -19,6 +19,10 @@ func readCPUTemp() string {
 	return readSysfsTemp()
 }
 
+func ReadCPUTemp() string {
+	return readCPUTemp()
+}
+
 func readSysfsTemp() string {
 	zones, _ := filepath.Glob("/sys/class/thermal/thermal_zone*")
 	if len(zones) == 0 {

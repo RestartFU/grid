@@ -29,6 +29,10 @@ func readCPUWattage() string {
 	return fmt.Sprintf("%.1f W", value)
 }
 
+func ReadCPUWattage() string {
+	return readCPUWattage()
+}
+
 func parseTurbostatPkgWatt(out []byte) float64 {
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	floatPattern := regexp.MustCompile(`[-+]?\d+(?:\.\d+)?`)

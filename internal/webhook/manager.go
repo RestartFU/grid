@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/restartfu/grid/internal/specs"
 	"github.com/restartfu/rhookie"
 	"github.com/samber/lo"
 )
@@ -104,6 +105,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		}
 
 		m.updateStats(*hashrate)
+		m.refreshDynamicSpecs()
 		fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
@@ -153,6 +155,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
+	m.refreshDynamicSpecs()
 	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
@@ -228,6 +231,11 @@ func (m *Manager) statsSnapshot() storedState {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.state
+}
+
+func (m *Manager) refreshDynamicSpecs() {
+	m.specs.CPUTemp = specs.ReadCPUTemp()
+	m.specs.CPUWattage = specs.ReadCPUWattage()
 }
 
 func (m *Manager) specFields() []rhookie.Field {
