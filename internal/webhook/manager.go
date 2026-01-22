@@ -100,7 +100,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		case <-ticker.C:
 		}
 
-		fields := m.specFields()
+		fields := append(m.specFields(), m.updatedField())
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
@@ -149,7 +149,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
-	fields := m.specFields()
+	fields := append(m.specFields(), m.updatedField())
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
@@ -242,8 +242,14 @@ func (m *Manager) specFields() []rhookie.Field {
 
 func (m *Manager) footerText() string {
 	uptime := formatUptime(time.Since(m.startedAt))
-	updated := fmt.Sprintf("<t:%d:R>", time.Now().Unix())
-	return fmt.Sprintf("Uptime: %s | Updated: %s", uptime, updated)
+	return fmt.Sprintf("Uptime: %s", uptime)
+}
+
+func (m *Manager) updatedField() rhookie.Field {
+	return rhookie.Field{}.
+		WithName("Updated").
+		WithValue(fmt.Sprintf("<t:%d:R>", time.Now().Unix())).
+		WithInline(true)
 }
 
 func parseWebhookURL(raw string) (string, string, error) {
