@@ -1,99 +1,16 @@
-package cpu
+package specs
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 )
-
-type Specs struct {
-	Model       string
-	Cores       int
-	Threads     int
-	RAM         string
-	RAMSpeed    string
-}
-
-func Model() (string, error) {
-	specs, err := ReadSpecs()
-	if err != nil {
-		return "", err
-	}
-	return specs.Model, nil
-}
-
-func ReadSpecs() (Specs, error) {
-	file, err := os.Open("/proc/cpuinfo")
-	if err != nil {
-		return Specs{}, fmt.Errorf("failed to open /proc/cpuinfo: %w", err)
-	}
-	defer file.Close()
-
-	info, err := readFirstCPUInfoBlock(file)
-	if err != nil {
-		return Specs{}, err
-	}
-
-	model := info["model name"]
-	if model == "" {
-		return Specs{}, fmt.Errorf("CPU model name not found in /proc/cpuinfo")
-	}
-
-	cores := parseInt(info["cpu cores"])
-	ram := readRAM()
-	ramSpeed := readRAMSpeed()
-
-	return Specs{
-		Model:      model,
-		Cores:      cores,
-		Threads:    runtime.NumCPU(),
-		RAM:        ram,
-		RAMSpeed:   ramSpeed,
-	}, nil
-}
-
-func readFirstCPUInfoBlock(file *os.File) (map[string]string, error) {
-	info := make(map[string]string)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.TrimSpace(line) == "" {
-			break
-		}
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		if key != "" {
-			info[key] = value
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading /proc/cpuinfo: %w", err)
-	}
-
-	return info, nil
-}
-
-func parseInt(value string) int {
-	if value == "" {
-		return 0
-	}
-	parsed, err := strconv.Atoi(strings.Fields(value)[0])
-	if err != nil {
-		return 0
-	}
-	return parsed
-}
 
 func readRAM() string {
 	if total := readDMIMemoryCapacity(); total != "" {
@@ -200,12 +117,12 @@ func readSysfsValues(patterns []string) []string {
 			if err != nil {
 				continue
 			}
-		value := strings.TrimSpace(string(data))
-		if value == "" || strings.EqualFold(value, "unknown") {
-			continue
+			value := strings.TrimSpace(string(data))
+			if value == "" || strings.EqualFold(value, "unknown") {
+				continue
+			}
+			seen[value] = struct{}{}
 		}
-		seen[value] = struct{}{}
-	}
 	}
 	if len(seen) == 0 {
 		return nil
@@ -331,7 +248,11 @@ func formatMemKB(kb float64) string {
 		kbPerGB = 1024 * 1024
 	)
 	if kb >= kbPerGB {
-		return fmt.Sprintf("%.1f GB", kb/kbPerGB)
+		gb := kb / kbPerGB
+		if gb >= 16 {
+			return fmt.Sprintf("%.0f GB", math.Round(gb))
+		}
+		return fmt.Sprintf("%.1f GB", gb)
 	}
 	if kb >= kbPerMB {
 		return fmt.Sprintf("%.0f MB", kb/kbPerMB)

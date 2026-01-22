@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/restartfu/grid/internal/cpu"
+	"github.com/restartfu/grid/internal/specs"
 	"github.com/restartfu/grid/internal/webhook"
 	"github.com/restartfu/grid/internal/xmrig"
 	"github.com/samber/lo"
@@ -24,13 +24,13 @@ func main() {
 	flag.Parse()
 
 	startedAt := time.Now().UTC()
-	specs := lo.Must(cpu.ReadSpecs())
+	cpuSpecs := lo.Must(specs.ReadSpecs())
 	mgr, err := webhook.NewManager(*webhookURL, webhook.CPUSpecs{
-		Model:      specs.Model,
-		Cores:      specs.Cores,
-		Threads:    specs.Threads,
-		RAM:        specs.RAM,
-		RAMSpeed:   specs.RAMSpeed,
+		Model:      cpuSpecs.Model,
+		Cores:      cpuSpecs.Cores,
+		Threads:    cpuSpecs.Threads,
+		RAM:        cpuSpecs.RAM,
+		RAMSpeed:   cpuSpecs.RAMSpeed,
 	}, startedAt)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "webhook init error: %v\n", err)
