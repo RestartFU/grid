@@ -15,14 +15,11 @@ func readCPUWattage() string {
 		return ""
 	}
 
-	args := []string{"--Summary", "--quiet", "--show", "PkgWatt", "--no-msr", "--no-perf", "-n", "1"}
-	out, err := exec.Command("turbostat", args...).Output()
+	baseArgs := []string{"--Summary", "--quiet", "--show", "PkgWatt", "-n", "1"}
+	sudoArgs := append([]string{"-n", "turbostat"}, baseArgs...)
+	out, err := exec.Command("sudo", sudoArgs...).Output()
 	if err != nil {
-		sudoArgs := append([]string{"-n", "turbostat"}, args...)
-		out, err = exec.Command("sudo", sudoArgs...).Output()
-		if err != nil {
-			return ""
-		}
+		return ""
 	}
 
 	value := parseTurbostatPkgWatt(out)
