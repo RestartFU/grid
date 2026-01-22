@@ -202,20 +202,14 @@ func isUsableDMIMemoryOutput(out []byte) bool {
 }
 
 func parseDMISpeed(line string) string {
-	prefixes := []string{
-		"Configured Memory Speed:",
-		"Speed:",
+	if !strings.HasPrefix(line, "Speed:") {
+		return ""
 	}
-	for _, prefix := range prefixes {
-		if strings.HasPrefix(line, prefix) {
-			value := strings.TrimSpace(strings.TrimPrefix(line, prefix))
-			if value == "" || strings.EqualFold(value, "unknown") || strings.Contains(value, "No Module") {
-				return ""
-			}
-			return normalizeSpeedValue(value)
-		}
+	value := strings.TrimSpace(strings.TrimPrefix(line, "Speed:"))
+	if value == "" || strings.EqualFold(value, "unknown") || strings.Contains(value, "No Module") {
+		return ""
 	}
-	return ""
+	return normalizeSpeedValue(value)
 }
 
 func normalizeSpeedValue(value string) string {
