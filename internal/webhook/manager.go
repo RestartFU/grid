@@ -102,13 +102,13 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		}
 
 		m.updateStats(*hashrate)
-		fields := append(m.specFields(), m.updatedField())
+		fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.updatedField())
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
 				WithTitle(m.title).
 				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
-				WithFields(append(fields, m.runtimeField(), m.bestHashrateField())...).
+				WithFields(fields...).
 				WithFooter(rhookie.Footer{Text: m.footerText()}).
 				WithColor(5763719)).
 			WithUsername(m.username)
@@ -151,7 +151,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
-	fields := append(m.specFields(), m.updatedField(), m.runtimeField(), m.bestHashrateField())
+	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.updatedField())
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
@@ -235,11 +235,6 @@ func (m *Manager) specFields() []rhookie.Field {
 			WithName("Cores/Threads").
 			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)))
 	}
-	if m.specs.Motherboard != "" {
-		fields = append(fields, rhookie.Field{}.
-			WithName("Motherboard").
-			WithValue(m.specs.Motherboard))
-	}
 	if m.specs.RAM != "" {
 		fields = append(fields, rhookie.Field{}.
 			WithName("RAM").
@@ -249,6 +244,11 @@ func (m *Manager) specFields() []rhookie.Field {
 		fields = append(fields, rhookie.Field{}.
 			WithName("RAM Speed").
 			WithValue(m.specs.RAMSpeed))
+	}
+	if m.specs.Motherboard != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("Motherboard").
+			WithValue(m.specs.Motherboard))
 	}
 	return fields
 }
