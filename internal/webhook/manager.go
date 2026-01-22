@@ -45,6 +45,7 @@ type CPUSpecs struct {
 	Threads     int
 	Motherboard string
 	CPUTemp     string
+	CPUWattage  string
 	RAM         string
 	RAMSpeed    string
 }
@@ -234,27 +235,38 @@ func (m *Manager) specFields() []rhookie.Field {
 	if m.specs.Cores > 0 && m.specs.Threads > 0 {
 		fields = append(fields, rhookie.Field{}.
 			WithName("Cores/Threads").
-			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)))
+			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)).
+			WithInline(true))
 	}
 	if m.specs.CPUTemp != "" {
 		fields = append(fields, rhookie.Field{}.
 			WithName("CPU Temp").
-			WithValue(m.specs.CPUTemp))
+			WithValue(m.specs.CPUTemp).
+			WithInline(true))
+	}
+	if m.specs.CPUWattage != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("CPU Power").
+			WithValue(m.specs.CPUWattage).
+			WithInline(true))
 	}
 	if m.specs.RAM != "" {
 		fields = append(fields, rhookie.Field{}.
 			WithName("RAM").
-			WithValue(m.specs.RAM))
+			WithValue(m.specs.RAM).
+			WithInline(true))
 	}
 	if m.specs.RAMSpeed != "" {
 		fields = append(fields, rhookie.Field{}.
 			WithName("RAM Speed").
-			WithValue(m.specs.RAMSpeed))
+			WithValue(m.specs.RAMSpeed).
+			WithInline(true))
 	}
 	if m.specs.Motherboard != "" {
 		fields = append(fields, rhookie.Field{}.
 			WithName("Motherboard").
-			WithValue(m.specs.Motherboard))
+			WithValue(m.specs.Motherboard).
+			WithInline(true))
 	}
 	return fields
 }
@@ -275,14 +287,16 @@ func (m *Manager) runtimeField() rhookie.Field {
 	stats := m.statsSnapshot()
 	return rhookie.Field{}.
 		WithName("Total Runtime").
-		WithValue(formatDurationSeconds(stats.TotalRuntimeSeconds))
+		WithValue(formatDurationSeconds(stats.TotalRuntimeSeconds)).
+		WithInline(true)
 }
 
 func (m *Manager) powerCostField() rhookie.Field {
 	stats := m.statsSnapshot()
 	return rhookie.Field{}.
 		WithName("Electricity Cost").
-		WithValue(formatPowerCost(stats.TotalRuntimeSeconds))
+		WithValue(formatPowerCost(stats.TotalRuntimeSeconds)).
+		WithInline(true)
 }
 
 func (m *Manager) bestHashrateField() rhookie.Field {
@@ -290,11 +304,13 @@ func (m *Manager) bestHashrateField() rhookie.Field {
 	if stats.BestHashrate <= 0 {
 		return rhookie.Field{}.
 			WithName("Best Hashrate").
-			WithValue("unknown")
+			WithValue("unknown").
+			WithInline(true)
 	}
 	return rhookie.Field{}.
 		WithName("Best Hashrate").
-		WithValue(formatHashrate(stats.BestHashrate))
+		WithValue(formatHashrate(stats.BestHashrate)).
+		WithInline(true)
 }
 
 func parseWebhookURL(raw string) (string, string, error) {

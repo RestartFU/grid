@@ -31,6 +31,7 @@ func main() {
 		Threads:    cpuSpecs.Threads,
 		Motherboard: cpuSpecs.Motherboard,
 		CPUTemp:    cpuSpecs.CPUTemp,
+		CPUWattage: cpuSpecs.CPUWattage,
 		RAM:        cpuSpecs.RAM,
 		RAMSpeed:   cpuSpecs.RAMSpeed,
 	}, startedAt)

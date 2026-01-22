@@ -24,6 +24,9 @@ func TestSpecs(t *testing.T) {
 	if specs.CPUTemp != "" {
 		t.Logf("CPU Temp: %s", specs.CPUTemp)
 	}
+	if specs.CPUWattage != "" {
+		t.Logf("CPU Power: %s", specs.CPUWattage)
+	}
 	if specs.RAM != "" {
 		t.Logf("RAM: %s", specs.RAM)
 	}
