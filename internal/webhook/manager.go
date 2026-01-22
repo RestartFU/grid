@@ -101,13 +101,14 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		case <-ticker.C:
 		}
 
+		m.updateStats(*hashrate)
 		fields := append(m.specFields(), m.updatedField())
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
 				WithTitle(m.title).
 				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
-				WithFields(fields...).
+				WithFields(append(fields, m.runtimeField(), m.bestHashrateField())...).
 				WithFooter(rhookie.Footer{Text: m.footerText()}).
 				WithColor(5763719)).
 			WithUsername(m.username)
@@ -150,7 +151,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
-	fields := append(m.specFields(), m.updatedField())
+	fields := append(m.specFields(), m.updatedField(), m.runtimeField(), m.bestHashrateField())
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
@@ -221,6 +222,12 @@ func (m *Manager) updateState(update func(*storedState)) error {
 	return writeState(m.statePath, &m.state)
 }
 
+func (m *Manager) statsSnapshot() storedState {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.state
+}
+
 func (m *Manager) specFields() []rhookie.Field {
 	var fields []rhookie.Field
 	if m.specs.Cores > 0 && m.specs.Threads > 0 {
@@ -256,6 +263,25 @@ func (m *Manager) updatedField() rhookie.Field {
 		WithName("Updated").
 		WithValue(fmt.Sprintf("<t:%d:R>", time.Now().Unix())).
 		WithInline(true)
+}
+
+func (m *Manager) runtimeField() rhookie.Field {
+	stats := m.statsSnapshot()
+	return rhookie.Field{}.
+		WithName("Total Runtime").
+		WithValue(formatDurationSeconds(stats.TotalRuntimeSeconds))
+}
+
+func (m *Manager) bestHashrateField() rhookie.Field {
+	stats := m.statsSnapshot()
+	if stats.BestHashrate <= 0 {
+		return rhookie.Field{}.
+			WithName("Best Hashrate").
+			WithValue("unknown")
+	}
+	return rhookie.Field{}.
+		WithName("Best Hashrate").
+		WithValue(fmt.Sprintf("%.2f H/s", stats.BestHashrate))
 }
 
 func parseWebhookURL(raw string) (string, string, error) {
@@ -311,6 +337,13 @@ func formatUptime(d time.Duration) string {
 		return fmt.Sprintf("%d hours", hours)
 	}
 	return fmt.Sprintf("%d hours %d minutes", hours, minutes)
+}
+
+func formatDurationSeconds(seconds int64) string {
+	if seconds <= 0 {
+		return "less than a minute"
+	}
+	return formatUptime(time.Duration(seconds) * time.Second)
 }
 
 var coreInfoPattern = regexp.MustCompile(`(?i)\b\d+\s*-?\s*core(?:s)?(?:\s+processor)?\b`)
