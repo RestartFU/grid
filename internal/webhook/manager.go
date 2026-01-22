@@ -102,7 +102,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		}
 
 		m.updateStats(*hashrate)
-		fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.updatedField())
+		fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
@@ -151,7 +151,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
-	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.updatedField())
+	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
@@ -272,6 +272,13 @@ func (m *Manager) runtimeField() rhookie.Field {
 		WithValue(formatDurationSeconds(stats.TotalRuntimeSeconds))
 }
 
+func (m *Manager) powerCostField() rhookie.Field {
+	stats := m.statsSnapshot()
+	return rhookie.Field{}.
+		WithName("Electricity Cost").
+		WithValue(formatPowerCost(stats.TotalRuntimeSeconds))
+}
+
 func (m *Manager) bestHashrateField() rhookie.Field {
 	stats := m.statsSnapshot()
 	if stats.BestHashrate <= 0 {
@@ -344,6 +351,20 @@ func formatDurationSeconds(seconds int64) string {
 		return "less than a minute"
 	}
 	return formatUptime(time.Duration(seconds) * time.Second)
+}
+
+func formatPowerCost(seconds int64) string {
+	if seconds <= 0 {
+		return "CAD 0.00"
+	}
+	const (
+		watts       = 200.0
+		ratePerKWh  = 0.10652
+	)
+	hours := float64(seconds) / 3600.0
+	kwh := (watts / 1000.0) * hours
+	cost := kwh * ratePerKWh
+	return fmt.Sprintf("CAD %.2f", cost)
 }
 
 func formatHashrate(value float64) string {
