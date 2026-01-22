@@ -7,6 +7,7 @@ type Specs struct {
 	Cores       int
 	Threads     int
 	Motherboard string
+	CPUTemp     string
 	RAM         string
 	RAMSpeed    string
 }
@@ -30,6 +31,7 @@ func ReadSpecs() (Specs, error) {
 		Cores:       cores,
 		Threads:     runtime.NumCPU(),
 		Motherboard: readMotherboard(),
+		CPUTemp:     readCPUTemp(),
 		RAM:         readRAM(),
 		RAMSpeed:    readRAMSpeed(),
 	}, nil

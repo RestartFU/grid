@@ -44,6 +44,7 @@ type CPUSpecs struct {
 	Cores       int
 	Threads     int
 	Motherboard string
+	CPUTemp     string
 	RAM         string
 	RAMSpeed    string
 }
@@ -234,6 +235,11 @@ func (m *Manager) specFields() []rhookie.Field {
 		fields = append(fields, rhookie.Field{}.
 			WithName("Cores/Threads").
 			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)))
+	}
+	if m.specs.CPUTemp != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("CPU Temp").
+			WithValue(m.specs.CPUTemp))
 	}
 	if m.specs.RAM != "" {
 		fields = append(fields, rhookie.Field{}.

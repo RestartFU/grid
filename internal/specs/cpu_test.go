@@ -21,6 +21,9 @@ func TestSpecs(t *testing.T) {
 	if specs.Motherboard != "" {
 		t.Logf("Motherboard: %s", specs.Motherboard)
 	}
+	if specs.CPUTemp != "" {
+		t.Logf("CPU Temp: %s", specs.CPUTemp)
+	}
 	if specs.RAM != "" {
 		t.Logf("RAM: %s", specs.RAM)
 	}
