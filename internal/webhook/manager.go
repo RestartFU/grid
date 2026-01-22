@@ -23,6 +23,7 @@ type Manager struct {
 	baseTotalSeconds int64
 	startedAt        time.Time
 	username         string
+	specs            CPUSpecs
 
 	mu    sync.Mutex
 	state storedState
@@ -35,8 +36,16 @@ type storedState struct {
 	TotalRuntimeSeconds int64   `json:"total_runtime_seconds"`
 }
 
+type CPUSpecs struct {
+	Model      string
+	Cores      int
+	Threads    int
+	RAM        string
+	RAMSpeed   string
+}
+
 // NewManager creates a webhook manager backed by a JSON state file.
-func NewManager(webhookURL, username string, startedAt time.Time) (*Manager, error) {
+func NewManager(webhookURL string, specs CPUSpecs, startedAt time.Time) (*Manager, error) {
 	statePath := filepath.Join(lo.Must(os.UserConfigDir()), "grid")
 
 	id, token, err := parseWebhookURL(webhookURL)
@@ -58,7 +67,8 @@ func NewManager(webhookURL, username string, startedAt time.Time) (*Manager, err
 		statePath:        statePath,
 		baseTotalSeconds: state.TotalRuntimeSeconds,
 		startedAt:        startedAt,
-		username:         username,
+		username:         specs.Model,
+		specs:            specs,
 		state:            state,
 	}, nil
 }
@@ -79,12 +89,13 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		uptimeField := rhookie.Field{}.
 			WithName("Uptime").
 			WithValue(formatUptime(time.Since(m.startedAt)))
+		fields := append([]rhookie.Field{uptimeField}, m.specFields()...)
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
 				WithTitle(m.username).
 				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
-				WithFields(uptimeField).
+				WithFields(fields...).
 				WithColor(5763719)).
 			WithUsername(m.username)
 
@@ -129,12 +140,13 @@ func (m *Manager) Stop() {
 	uptimeField := rhookie.Field{}.
 		WithName("Uptime").
 		WithValue(formatUptime(time.Since(m.startedAt)))
+	fields := append([]rhookie.Field{uptimeField}, m.specFields()...)
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
 			WithTitle("Miner Down").
 			WithDescription("miner is down").
-			WithFields(uptimeField).
+			WithFields(fields...).
 			WithColor(16711680)).
 		WithUsername(m.username)
 
@@ -196,6 +208,26 @@ func (m *Manager) updateState(update func(*storedState)) error {
 	defer m.mu.Unlock()
 	update(&m.state)
 	return writeState(m.statePath, &m.state)
+}
+
+func (m *Manager) specFields() []rhookie.Field {
+	var fields []rhookie.Field
+	if m.specs.Cores > 0 && m.specs.Threads > 0 {
+		fields = append(fields, rhookie.Field{}.
+			WithName("Cores/Threads").
+			WithValue(fmt.Sprintf("%dC / %dT", m.specs.Cores, m.specs.Threads)))
+	}
+	if m.specs.RAM != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("RAM").
+			WithValue(m.specs.RAM))
+	}
+	if m.specs.RAMSpeed != "" {
+		fields = append(fields, rhookie.Field{}.
+			WithName("RAM Speed").
+			WithValue(m.specs.RAMSpeed))
+	}
+	return fields
 }
 
 func parseWebhookURL(raw string) (string, string, error) {

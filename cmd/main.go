@@ -24,7 +24,14 @@ func main() {
 	flag.Parse()
 
 	startedAt := time.Now().UTC()
-	mgr, err := webhook.NewManager(*webhookURL, lo.Must(cpu.Model()), startedAt)
+	specs := lo.Must(cpu.ReadSpecs())
+	mgr, err := webhook.NewManager(*webhookURL, webhook.CPUSpecs{
+		Model:      specs.Model,
+		Cores:      specs.Cores,
+		Threads:    specs.Threads,
+		RAM:        specs.RAM,
+		RAMSpeed:   specs.RAMSpeed,
+	}, startedAt)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "webhook init error: %v\n", err)
 		os.Exit(1)
