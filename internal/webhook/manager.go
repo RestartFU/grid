@@ -107,7 +107,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
 				WithTitle(m.title).
-				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
+				WithDescription(formatHashrate(*hashrate)).
 				WithFields(fields...).
 				WithFooter(rhookie.Footer{Text: m.footerText()}).
 				WithColor(5763719)).
@@ -281,7 +281,7 @@ func (m *Manager) bestHashrateField() rhookie.Field {
 	}
 	return rhookie.Field{}.
 		WithName("Best Hashrate").
-		WithValue(fmt.Sprintf("%.2f H/s", stats.BestHashrate))
+		WithValue(formatHashrate(stats.BestHashrate))
 }
 
 func parseWebhookURL(raw string) (string, string, error) {
@@ -344,6 +344,16 @@ func formatDurationSeconds(seconds int64) string {
 		return "less than a minute"
 	}
 	return formatUptime(time.Duration(seconds) * time.Second)
+}
+
+func formatHashrate(value float64) string {
+	if value >= 1_000_000 {
+		return fmt.Sprintf("%.2f MH/s", value/1_000_000)
+	}
+	if value >= 1_000 {
+		return fmt.Sprintf("%.2f KH/s", value/1_000)
+	}
+	return fmt.Sprintf("%.2f H/s", value)
 }
 
 var coreInfoPattern = regexp.MustCompile(`(?i)\b\d+\s*-?\s*core(?:s)?(?:\s+processor)?\b`)
