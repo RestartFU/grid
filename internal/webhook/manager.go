@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -23,6 +24,7 @@ type Manager struct {
 	statePath        string
 	baseTotalSeconds int64
 	startedAt        time.Time
+	title            string
 	username         string
 	specs            CPUSpecs
 
@@ -64,12 +66,22 @@ func NewManager(webhookURL string, specs CPUSpecs, startedAt time.Time) (*Manage
 
 	h := rhookie.NewHook(id, token)
 	name := stripCoreInfo(specs.Model)
+	username := os.Getenv("USER")
+	if username == "" {
+		if current, err := user.Current(); err == nil {
+			username = current.Username
+		}
+	}
+	if username == "" {
+		username = name
+	}
 	return &Manager{
 		hook:             h,
 		statePath:        statePath,
 		baseTotalSeconds: state.TotalRuntimeSeconds,
 		startedAt:        startedAt,
-		username:         name,
+		title:            name,
+		username:         username,
 		specs:            specs,
 		state:            state,
 	}, nil
@@ -88,16 +100,14 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 		case <-ticker.C:
 		}
 
-		uptimeField := rhookie.Field{}.
-			WithName("Uptime").
-			WithValue(formatUptime(time.Since(m.startedAt)))
-		fields := append([]rhookie.Field{uptimeField}, m.specFields()...)
+		fields := m.specFields()
 		payload := rhookie.Payload{}.
 			WithEmbeds(rhookie.Embed{}.
 				WithType("rich").
-				WithTitle(m.username).
+				WithTitle(m.title).
 				WithDescription(fmt.Sprintf("%.2f H/s", *hashrate)).
 				WithFields(fields...).
+				WithFooter(rhookie.Footer{Text: m.footerText()}).
 				WithColor(5763719)).
 			WithUsername(m.username)
 
@@ -139,16 +149,14 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
-	uptimeField := rhookie.Field{}.
-		WithName("Uptime").
-		WithValue(formatUptime(time.Since(m.startedAt)))
-	fields := append([]rhookie.Field{uptimeField}, m.specFields()...)
+	fields := m.specFields()
 	payload := rhookie.Payload{}.
 		WithEmbeds(rhookie.Embed{}.
 			WithType("rich").
 			WithTitle("Miner Down").
 			WithDescription("miner is down").
 			WithFields(fields...).
+			WithFooter(rhookie.Footer{Text: m.footerText()}).
 			WithColor(16711680)).
 		WithUsername(m.username)
 
@@ -230,6 +238,12 @@ func (m *Manager) specFields() []rhookie.Field {
 			WithValue(m.specs.RAMSpeed))
 	}
 	return fields
+}
+
+func (m *Manager) footerText() string {
+	uptime := formatUptime(time.Since(m.startedAt))
+	updated := time.Now().UTC().Format("2006-01-02 15:04:05 UTC")
+	return fmt.Sprintf("Uptime: %s | Updated: %s", uptime, updated)
 }
 
 func parseWebhookURL(raw string) (string, string, error) {
