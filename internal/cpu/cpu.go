@@ -96,6 +96,10 @@ func parseInt(value string) int {
 }
 
 func readRAM() string {
+	if total := readDMIMemoryCapacity(); total != "" {
+		return total
+	}
+
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {
 		return ""
@@ -117,6 +121,56 @@ func readRAM() string {
 		}
 	}
 	return ""
+}
+
+func readDMIMemoryCapacity() string {
+	out, err := runDMIDecode()
+	if err != nil {
+		return ""
+	}
+
+	var totalKB float64
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if !strings.HasPrefix(line, "Size:") {
+			continue
+		}
+		value := strings.TrimSpace(strings.TrimPrefix(line, "Size:"))
+		if value == "" || strings.EqualFold(value, "no module installed") {
+			continue
+		}
+		amount, unit := parseDMIUnit(value)
+		if amount == 0 || unit == "" {
+			continue
+		}
+		switch unit {
+		case "kb":
+			totalKB += amount
+		case "mb":
+			totalKB += amount * 1024
+		case "gb":
+			totalKB += amount * 1024 * 1024
+		}
+	}
+
+	if totalKB == 0 {
+		return ""
+	}
+	return formatMemKB(totalKB)
+}
+
+func parseDMIUnit(value string) (float64, string) {
+	fields := strings.Fields(value)
+	if len(fields) < 2 {
+		return 0, ""
+	}
+	amount, err := strconv.ParseFloat(fields[0], 64)
+	if err != nil {
+		return 0, ""
+	}
+	unit := strings.ToLower(fields[1])
+	return amount, unit
 }
 
 func readRAMSpeed() string {

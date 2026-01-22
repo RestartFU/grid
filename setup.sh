@@ -40,7 +40,8 @@ apt install -y \
   libuv1-dev \
   hwloc libhwloc-dev \
   ca-certificates \
-  golang-go
+  golang-go \
+  dmidecode
 
 # --- Get XMRig source (fresh) ---
 install -d /opt

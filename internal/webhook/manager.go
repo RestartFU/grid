@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -62,12 +63,13 @@ func NewManager(webhookURL string, specs CPUSpecs, startedAt time.Time) (*Manage
 	}
 
 	h := rhookie.NewHook(id, token)
+	name := stripCoreInfo(specs.Model)
 	return &Manager{
 		hook:             h,
 		statePath:        statePath,
 		baseTotalSeconds: state.TotalRuntimeSeconds,
 		startedAt:        startedAt,
-		username:         specs.Model,
+		username:         name,
 		specs:            specs,
 		state:            state,
 	}, nil
@@ -283,4 +285,11 @@ func formatUptime(d time.Duration) string {
 		return fmt.Sprintf("%d hours", hours)
 	}
 	return fmt.Sprintf("%d hours %d minutes", hours, minutes)
+}
+
+var coreInfoPattern = regexp.MustCompile(`(?i)\b\d+\s*-?\s*core(?:s)?(?:\s+processor)?\b`)
+
+func stripCoreInfo(model string) string {
+	cleaned := coreInfoPattern.ReplaceAllString(model, "")
+	return strings.Join(strings.Fields(cleaned), " ")
 }
