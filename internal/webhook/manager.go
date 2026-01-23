@@ -117,39 +117,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 				WithColor(5763719)).
 			WithUsername(m.username)
 
-		messageID, err := m.getMessageID()
-		if err != nil {
-			log.Printf("load message id: %v", err)
-			continue
-		}
-
-		if messageID == "" {
-			msg, err := m.hook.SendMessageWithResponse(payload)
-			if err != nil {
-				log.Printf("send message: %v", err)
-				continue
-			}
-			if err := m.updateState(func(s *storedState) {
-				s.MessageID = msg.ID
-			}); err != nil {
-				log.Printf("save message id: %v", err)
-			}
-			continue
-		}
-
-		if err := m.hook.EditMessage(messageID, payload); err != nil {
-			log.Printf("edit message: %v", err)
-			msg, sendErr := m.hook.SendMessageWithResponse(payload)
-			if sendErr != nil {
-				log.Printf("send message after edit failure: %v", sendErr)
-				continue
-			}
-			if err := m.updateState(func(s *storedState) {
-				s.MessageID = msg.ID
-			}); err != nil {
-				log.Printf("save message id after edit failure: %v", err)
-			}
-		}
+		m.sendOrEditWithRetry(ctx, payload)
 	}
 }
 
@@ -167,29 +135,7 @@ func (m *Manager) Stop() {
 			WithColor(16711680)).
 		WithUsername(m.username)
 
-	messageID, err := m.getMessageID()
-	if err != nil {
-		log.Printf("load message id for shutdown: %v", err)
-		return
-	}
-	if messageID == "" {
-		msg, err := m.hook.SendMessageWithResponse(payload)
-		if err != nil {
-			log.Printf("send shutdown message: %v", err)
-			return
-		}
-		if err := m.updateState(func(s *storedState) {
-			s.MessageID = msg.ID
-		}); err != nil {
-			log.Printf("save shutdown message id: %v", err)
-		}
-		m.updateTotalRuntime()
-		return
-	}
-
-	if err := m.hook.EditMessage(messageID, payload); err != nil {
-		log.Printf("edit shutdown message: %v", err)
-	}
+	m.sendOrEditWithRetry(context.Background(), payload)
 
 	m.updateTotalRuntime()
 }
@@ -236,6 +182,59 @@ func (m *Manager) statsSnapshot() storedState {
 func (m *Manager) refreshDynamicSpecs() {
 	m.specs.CPUTemp = specs.ReadCPUTemp()
 	m.specs.CPUWattage = specs.ReadCPUWattage()
+}
+
+func (m *Manager) sendOrEditWithRetry(ctx context.Context, payload rhookie.Payload) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		messageID, err := m.getMessageID()
+		if err != nil {
+			log.Printf("load message id: %v", err)
+			if !sleepWithContext(ctx, time.Second*5) {
+				return
+			}
+			continue
+		}
+
+		if messageID == "" {
+			msg, err := m.hook.SendMessageWithResponse(payload)
+			if err != nil {
+				log.Printf("send message: %v", err)
+				if !sleepWithContext(ctx, time.Second*5) {
+					return
+				}
+				continue
+			}
+			if err := m.updateState(func(s *storedState) {
+				s.MessageID = msg.ID
+			}); err != nil {
+				log.Printf("save message id: %v", err)
+			}
+			return
+		}
+
+		if err := m.hook.EditMessage(messageID, payload); err != nil {
+			log.Printf("edit message: %v", err)
+			if !sleepWithContext(ctx, time.Second*5) {
+				return
+			}
+			continue
+		}
+		return
+	}
+}
+
+func sleepWithContext(ctx context.Context, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }
 
 func (m *Manager) specFields() []rhookie.Field {
