@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/restartfu/grid/internal/specs"
@@ -28,6 +29,7 @@ type Manager struct {
 	title            string
 	username         string
 	specs            CPUSpecs
+	running          *atomic.Bool
 
 	mu    sync.Mutex
 	state storedState
@@ -92,10 +94,11 @@ func NewManager(webhookURL string, specs CPUSpecs, startedAt time.Time) (*Manage
 }
 
 // Start begins periodic webhook updates and posts a down status on shutdown.
-func (m *Manager) Start(ctx context.Context, hashrate *float64) {
+func (m *Manager) Start(ctx context.Context, hashrate *float64, running *atomic.Bool) {
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	defer m.Stop()
+	m.running = running
 
 	for {
 		select {
@@ -106,16 +109,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 
 		m.updateStats(*hashrate)
 		m.refreshDynamicSpecs()
-		fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
-		payload := rhookie.Payload{}.
-			WithEmbeds(rhookie.Embed{}.
-				WithType("rich").
-				WithTitle(m.title).
-				WithDescription(formatHashrate(*hashrate)).
-				WithFields(fields...).
-				WithFooter(rhookie.Footer{Text: m.footerText()}).
-				WithColor(5763719)).
-			WithUsername(m.username)
+		payload := m.runningPayload(*hashrate, m.runningStatus())
 
 		m.sendOrEditWithRetry(ctx, payload)
 	}
@@ -124,16 +118,7 @@ func (m *Manager) Start(ctx context.Context, hashrate *float64) {
 // Stop posts a down status update once.
 func (m *Manager) Stop() {
 	m.refreshDynamicSpecs()
-	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
-	payload := rhookie.Payload{}.
-		WithEmbeds(rhookie.Embed{}.
-			WithType("rich").
-			WithTitle("Miner Down").
-			WithDescription("miner is down").
-			WithFields(fields...).
-			WithFooter(rhookie.Footer{Text: m.footerText()}).
-			WithColor(16711680)).
-		WithUsername(m.username)
+	payload := m.downPayload("Miner Down")
 
 	m.sendOrEditWithRetry(context.Background(), payload)
 
@@ -182,6 +167,38 @@ func (m *Manager) statsSnapshot() storedState {
 func (m *Manager) refreshDynamicSpecs() {
 	m.specs.CPUTemp = specs.ReadCPUTemp()
 	m.specs.CPUWattage = specs.ReadCPUWattage()
+}
+
+func (m *Manager) runningPayload(hashrate float64, running bool) rhookie.Payload {
+	if !running {
+		return m.downPayload("XMRig Not Running")
+	}
+	fields := append(m.specFields(), m.bestHashrateField(), m.runtimeField(), m.powerCostField(), m.updatedField())
+	return rhookie.Payload{}.
+		WithEmbeds(rhookie.Embed{}.
+			WithType("rich").
+			WithTitle(m.title).
+			WithDescription(formatHashrate(hashrate)).
+			WithFields(fields...).
+			WithFooter(rhookie.Footer{Text: m.footerText()}).
+			WithColor(5763719)).
+		WithUsername(m.username)
+}
+
+func (m *Manager) downPayload(title string) rhookie.Payload {
+	return rhookie.Payload{}.
+		WithEmbeds(rhookie.Embed{}.
+			WithType("rich").
+			WithTitle(title).
+		WithColor(16753920)).
+		WithUsername(m.username)
+}
+
+func (m *Manager) runningStatus() bool {
+	if m.running == nil {
+		return true
+	}
+	return m.running.Load()
 }
 
 func (m *Manager) sendOrEditWithRetry(ctx context.Context, payload rhookie.Payload) {
