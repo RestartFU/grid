@@ -53,8 +53,3 @@ func ScaleHashrate(value float64, unit string) float64 {
 		return value
 	}
 }
-
-// IsInitLine returns true if the line contains the pool connect message.
-func IsInitLine(line string) bool {
-	return strings.Contains(strings.ToLower(line), "use pool")
-}
