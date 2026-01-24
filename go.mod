@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/labstack/echo/v4 v4.11.4
-	github.com/restartfu/grid-node/openapi v0.0.0-00010101000000-000000000000
+	github.com/restartfu/grid-node/openapi v1.0.0
 )
 
 require (
@@ -24,5 +24,3 @@ require (
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 )
-
-replace github.com/restartfu/grid-node/openapi => ./openapi
