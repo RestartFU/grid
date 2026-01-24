@@ -1,5 +1,5 @@
 [Unit]
-Description=Grid XMR Mining
+Description=Grid Node XMR Mining
 After=network-online.target
 Wants=network-online.target
 
@@ -11,7 +11,7 @@ User=root
 LimitNOFILE=1048576
 Nice=-5
 
-ExecStart=/usr/bin/grid --webhook=__WEBHOOK_URL__
+ExecStart=/usr/bin/grid-node
 
 Restart=on-failure
 RestartSec=10

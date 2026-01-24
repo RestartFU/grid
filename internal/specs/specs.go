@@ -13,7 +13,7 @@ type Specs struct {
 	RAMSpeed    string
 }
 
-func Model() (string, error) {
+func model() (string, error) {
 	specs, err := ReadSpecs()
 	if err != nil {
 		return "", err

@@ -1,0 +1,196 @@
+openapi: 3.0.3
+info:
+  title: Grid Node HTTP API
+  version: 1.0.0
+  description: Read-only system specs, CPU telemetry, and XMRig status for grid-node.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /specs:
+    get:
+      summary: Read system specs
+      operationId: getSpecs
+      responses:
+        "200":
+          description: System specs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Specs"
+        "500":
+          description: Failed to read system specs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /metrics:
+    get:
+      summary: Read live CPU metrics
+      operationId: getMetrics
+      responses:
+        "200":
+          description: Live CPU metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metrics"
+  /xmrig:
+    get:
+      summary: Read XMRig status
+      operationId: getXmrigStatus
+      responses:
+        "200":
+          description: XMRig status and hashrate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/XMRigStatus"
+  /xmrig/logs:
+    get:
+      summary: Read recent XMRig logs
+      operationId: getXmrigLogs
+      parameters:
+        - name: n
+          in: query
+          required: false
+          description: Number of most recent log lines to return (max 250).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 250
+            default: 250
+      responses:
+        "200":
+          description: Recent log lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/XMRigLogs"
+        "400":
+          description: Invalid log count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Health:
+      type: object
+      required:
+        - status
+        - time
+      properties:
+        status:
+          type: string
+          example: ok
+        time:
+          type: string
+          format: date-time
+    Specs:
+      type: object
+      required:
+        - model
+        - cores
+        - threads
+        - motherboard
+        - cpu_temp
+        - cpu_wattage
+        - ram
+        - ram_speed
+      properties:
+        model:
+          type: string
+        cores:
+          type: integer
+          format: int32
+        threads:
+          type: integer
+          format: int32
+        motherboard:
+          type: string
+        cpu_temp:
+          type: string
+        cpu_wattage:
+          type: string
+        ram:
+          type: string
+        ram_speed:
+          type: string
+    Metrics:
+      type: object
+      required:
+        - cpu_temp
+        - cpu_wattage
+        - time
+      properties:
+        cpu_temp:
+          type: string
+        cpu_wattage:
+          type: string
+        time:
+          type: string
+          format: date-time
+    XMRigStatus:
+      type: object
+      required:
+        - running
+        - hashrate_hs
+      properties:
+        running:
+          type: boolean
+        hashrate_hs:
+          type: number
+          format: double
+        last_log_time:
+          type: string
+          format: date-time
+        last_start_time:
+          type: string
+          format: date-time
+        last_exit_time:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+    XMRigLogEntry:
+      type: object
+      required:
+        - time
+        - line
+      properties:
+        time:
+          type: string
+          format: date-time
+        line:
+          type: string
+    XMRigLogs:
+      type: object
+      required:
+        - logs
+        - count
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/XMRigLogEntry"
+        count:
+          type: integer
+          format: int32
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string

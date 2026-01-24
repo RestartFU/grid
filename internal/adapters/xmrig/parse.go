@@ -8,8 +8,8 @@ import (
 
 var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[A-Za-z]`)
 
-// ParseHashrateFromLog parses a 10s hashrate line from xmrig output.
-func ParseHashrateFromLog(line string) (float64, bool) {
+// parseHashrateFromLog parses a 10s hashrate line from xmrig output.
+func parseHashrateFromLog(line string) (float64, bool) {
 	line = ansiRegex.ReplaceAllString(line, "")
 	lower := strings.ToLower(line)
 	if !strings.Contains(lower, "speed") {
@@ -33,13 +33,13 @@ func ParseHashrateFromLog(line string) (float64, bool) {
 		if strings.HasSuffix(strings.ToLower(last), "h/s") {
 			unit = last
 		}
-		return ScaleHashrate(value, unit), true
+		return scaleHashrate(value, unit), true
 	}
 	return 0, false
 }
 
-// ScaleHashrate converts the value into H/s.
-func ScaleHashrate(value float64, unit string) float64 {
+// scaleHashrate converts the value into H/s.
+func scaleHashrate(value float64, unit string) float64 {
 	switch strings.ToLower(unit) {
 	case "kh/s":
 		return value * 1e3

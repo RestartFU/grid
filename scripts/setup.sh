@@ -12,9 +12,6 @@ working_dir=$(realpath .)
 # --- Take input for Tokyo IP ---
 read -p "Enter Tokyo server IP address: " TOKYO_IP
 
-# --- Take input for webhook URL ---
-read -p "Enter webhook URL: " WEBHOOK_URL
-
 # --- Detect CPU model (7900X vs 7950X) and tune hugepages ---
 CPU_MODEL="$(grep -m1 -E 'model name\s*:' /proc/cpuinfo | cut -d: -f2- | sed 's/^[[:space:]]*//')"
 
@@ -68,9 +65,9 @@ make -j"$(nproc)"
 # --- Install binary ---
 install -m 0755 xmrig /usr/bin/xmrig
 
-# --- Build and install grid ---
+# --- Build and install grid-node ---
 cd "$working_dir"
-go build -o /usr/bin/grid ./cmd/main.go
+go build -o /usr/bin/grid-node ./cmd/main.go
 
 # --- /etc/hosts: simple + robust (no regex capture groups) ---
 # Remove any existing "tokyo" entry (end-of-line match)
@@ -81,13 +78,13 @@ echo "${TOKYO_IP} tokyo" >> /etc/hosts
 echo "vm.nr_hugepages=${HUGEPAGES}" > /etc/sysctl.d/99-hugepages.conf
 sysctl -p /etc/sysctl.d/99-hugepages.conf
 
-sed "s|__WEBHOOK_URL__|${WEBHOOK_URL}|g" "$working_dir/grid.service" > /etc/systemd/system/grid.service
+install -m 0644 "$working_dir/grid-node.service" /etc/systemd/system/grid-node.service
 systemctl daemon-reload
-systemctl enable grid
-systemctl restart grid
+systemctl enable grid-node
+systemctl restart grid-node
 
 # --- Verify ---
-systemctl --no-pager status grid || true
+systemctl --no-pager status grid-node || true
 echo
 /usr/bin/xmrig --version
 echo
