@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	addr := flag.String("addr", ":8080", "listen address")
+	addr := flag.String("addr", "0.0.0.0:8080", "listen address")
 	xmrigArgsFlag := flag.String("xmrig-args", "", "xmrig args, space-separated; overrides defaults")
 	xmrigRestartDelayFlag := flag.Duration("xmrig-restart-delay", 0, "xmrig restart delay")
 	flag.Parse()
