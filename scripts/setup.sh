@@ -78,7 +78,7 @@ echo "${TOKYO_IP} tokyo" >> /etc/hosts
 echo "vm.nr_hugepages=${HUGEPAGES}" > /etc/sysctl.d/99-hugepages.conf
 sysctl -p /etc/sysctl.d/99-hugepages.conf
 
-install -m 0644 "$working_dir/grid-node.service" /etc/systemd/system/grid-node.service
+install -m 0644 "$working_dir/scripts/grid-node.service" /etc/systemd/system/grid-node.service
 systemctl daemon-reload
 systemctl enable grid-node
 systemctl restart grid-node
